@@ -4,6 +4,7 @@ extends Area2D
 
 @onready var shoot_timer: Timer = $ShootTimer
 @onready var laser_spawn: Marker2D = $LaserSpawn
+@onready var booster: Line2D = $Booster
 
 # Gameplay stats
 var lives: int = 3
@@ -52,13 +53,35 @@ func reset_player_stats() -> void:
 	call_deferred("update_hud")
 
 func _process(delta: float) -> void:
-	# 1. Movement: Follow mouse/touch X drag
+	# 1. Movement: Follow mouse/touch drag, ignoring touches on HUD buttons
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		var target_x = get_global_mouse_position().x
-		target_x = clamp(target_x, half_width, viewport_width - half_width)
-		# Smooth speed scales with sensitivity setting
-		var actual_speed = sensitivity * 15.0
-		position.x = lerp(position.x, target_x, actual_speed * delta)
+		var mouse_pos = get_global_mouse_position()
+		var ignore_click = false
+		var main_scene = get_tree().current_scene
+		
+		if main_scene:
+			# Check Boost Overdrive Button
+			var boost_btn = main_scene.get_node_or_null("%BoostButton")
+			if boost_btn and boost_btn.is_visible_in_tree() and boost_btn.get_global_rect().has_point(mouse_pos):
+				ignore_click = true
+				
+			# Check HUD Pause Button
+			var pause_btn = main_scene.get_node_or_null("%PauseButton")
+			if pause_btn and pause_btn.is_visible_in_tree() and pause_btn.get_global_rect().has_point(mouse_pos):
+				ignore_click = true
+				
+			# Check Sidebar utility panel buttons
+			for btn_name in ["%MissionBtn", "%LeaderboardBtn", "%SettingsBtn"]:
+				var btn = main_scene.get_node_or_null(btn_name)
+				if btn and btn.is_visible_in_tree() and btn.get_global_rect().has_point(mouse_pos):
+					ignore_click = true
+					
+		if not ignore_click:
+			var target_x = clamp(mouse_pos.x, half_width, viewport_width - half_width)
+			var actual_speed = sensitivity * 15.0
+			if is_boosting:
+				actual_speed *= 1.8 # 80% faster movement slide when boosting!
+			position.x = lerp(position.x, target_x, actual_speed * delta)
 
 	# 2. Invulnerability Flash Handler
 	if is_invulnerable:
@@ -104,7 +127,18 @@ func _process(delta: float) -> void:
 		if shield >= max_shield:
 			shield_recharge_timer = 0.0
 
-	# 5. Continuous HUD Sync during active status changes
+	# 5. Booster Visual Flame Scaling
+	if booster:
+		if is_boosting:
+			booster.width = randf_range(6.0, 9.0)
+			booster.points = PackedVector2Array([Vector2(0, 10), Vector2(0, randf_range(28.0, 36.0))])
+			booster.default_color = Color(1.0, 0.0, 0.47, 1.0) # Pink boost flame
+		else:
+			booster.width = randf_range(2.5, 4.0)
+			booster.points = PackedVector2Array([Vector2(0, 10), Vector2(0, randf_range(16.0, 20.0))])
+			booster.default_color = Color(1.0, 0.5, 0.0, 0.8) # Orange standard flame
+
+	# 6. Continuous HUD Sync during active status changes
 	if want_boost or boost < max_boost or is_invulnerable:
 		update_hud()
 
@@ -119,14 +153,17 @@ func take_damage() -> void:
 	
 	if shield > 0:
 		shield -= 1
+		print("[Damage] Shield hit! Current shield: ", shield)
 		make_invulnerable(1.0) # Brief invulnerability
 	else:
 		lives -= 1
+		print("[Damage] Life lost! Current lives: ", lives)
 		make_invulnerable(1.8) # Longer invulnerability for life loss
 	
 	update_hud()
 	
 	if lives <= 0:
+		print("[Damage] Lives depleted. Triggering game over.")
 		if main_scene and main_scene.has_method("trigger_game_over"):
 			main_scene.trigger_game_over()
 
