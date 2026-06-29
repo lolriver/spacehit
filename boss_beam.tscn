@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://c3m7x8y9z0w1v"]
+
+[ext_resource type="Script" path="res://boss_beam.gd" id="1_boss_beam_gd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(40, 1150)
+
+[node name="BossBeam" type="Area2D" groups=["enemy_bullets"]]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_boss_beam_gd")
+
+[node name="Line2D" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(1, 0, 0, 0.4)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 575)
+shape = SubResource("RectangleShape2D_1")
