@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://c6y7e2x5v2u1p"]
+
+[ext_resource type="Script" path="res://laser.gd" id="1_laser_gd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(6, 20)
+
+[node name="Laser" type="Area2D" groups=["lasers"]]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_laser_gd")
+
+[node name="Line2D" type="Line2D" parent="."]
+points = PackedVector2Array(0, -10, 0, 10)
+width = 4.0
+default_color = Color(1, 0.3, 0.3, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+scale = Vector2(0.3, 1)
