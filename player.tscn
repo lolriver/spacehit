@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3 uid="uid://d1g2y3x4v5u6p"]
+
+[ext_resource type="Script" path="res://player.gd" id="1_player_gd"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 20.0
+
+[node name="Player" type="Area2D" groups=["player"]]
+collision_layer = 1
+collision_mask = 4
+script = ExtResource("1_player_gd")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0, 0.4, 0.4, 0.5)
+polygon = PackedVector2Array(0, -25, -20, 15, -10, 10, 10, 10, 20, 15)
+
+[node name="Outline" type="Line2D" parent="."]
+points = PackedVector2Array(0, -25, -20, 15, -10, 10, 10, 10, 20, 15, 0, -25)
+width = 2.5
+default_color = Color(0, 1, 0.8, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_1")
+
+[node name="LaserSpawn" type="Marker2D" parent="."]
+position = Vector2(0, -25)
+
+[node name="ShootTimer" type="Timer" parent="."]
+wait_time = 0.2
+autostart = true
