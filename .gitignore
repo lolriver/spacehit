@@ -1,6 +1,7 @@
 # Godot-specific ignores
 .godot/
 *.translation
+*.uid
 
 # Mono-specific ignores
 .mono/
