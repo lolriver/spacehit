@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://dd6y5u4v3p2q1"]
+
+[ext_resource type="Script" path="res://enemy_bullet.gd" id="1_enemy_bullet_gd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(6, 16)
+
+[node name="EnemyBullet" type="Area2D" groups=["enemy_bullets"]]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_enemy_bullet_gd")
+
+[node name="Line2D" type="Line2D" parent="."]
+points = PackedVector2Array(0, -8, 0, 8)
+width = 3.0
+default_color = Color(1, 0, 0.47, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+scale = Vector2(0.3, 0.8)
