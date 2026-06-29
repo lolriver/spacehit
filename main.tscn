@@ -117,7 +117,7 @@ anchor_bottom = 0.5
 offset_left = -220.0
 offset_top = -250.0
 offset_right = 220.0
-offset_bottom = -130.0
+offset_bottom = -120.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_PurpleNeon")
@@ -137,7 +137,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
 theme_override_font_sizes/font_size = 18
-text = "★ SCI-FI ARCADE SHOOTER ★"
+text = "★ INFINITE SPACE ARCADE ★"
 horizontal_alignment = 1
 
 [node name="MenuHighScoreLabel" type="Label" parent="UI/MainMenuScreen"]
@@ -182,7 +182,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
 theme_override_font_sizes/font_size = 28
 theme_override_styles/normal = SubResource("StyleBoxFlat_CyanNeon")
-text = "PLAY"
+text = "START PILOTING"
 
 [node name="MenuLeaderboardBtn" type="Button" parent="UI/MainMenuScreen/VBox"]
 unique_name_in_owner = true
@@ -275,10 +275,11 @@ text = "NEON STARFIGHTER"
 horizontal_alignment = 1
 
 [node name="Sub" type="Label" parent="UI/HUD/TitlePanel/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.662745, 0.235294, 1, 1)
 theme_override_font_sizes/font_size = 12
-text = "★"
+text = "STAGE 1"
 horizontal_alignment = 1
 
 [node name="LivesPanel" type="PanelContainer" parent="UI/HUD"]
@@ -334,6 +335,40 @@ theme_override_colors/font_color = Color(0, 0.941176, 1, 1)
 theme_override_font_sizes/font_size = 22
 theme_override_styles/normal = SubResource("StyleBoxFlat_CyanNeon")
 text = "||"
+
+[node name="BossPanel" type="PanelContainer" parent="UI/HUD"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 125.0
+offset_right = 200.0
+offset_bottom = 195.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_MagentaNeon")
+
+[node name="VBox" type="VBoxContainer" parent="UI/HUD/BossPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="BossTitle" type="Label" parent="UI/HUD/BossPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0, 0.470588, 1)
+theme_override_font_sizes/font_size = 12
+text = "BOSS DETECTED"
+horizontal_alignment = 1
+
+[node name="BossProgressBar" type="ProgressBar" parent="UI/HUD/BossPanel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+value = 100.0
+show_percentage = false
 
 [node name="Sidebar" type="VBoxContainer" parent="UI/HUD"]
 layout_mode = 1
@@ -795,14 +830,14 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "LEVEL 1: OUTER SECTOR"
+text = "STAGE 1: OUTER SECTOR"
 horizontal_alignment = 1
 
 [node name="MissionDescLabel" type="Label" parent="UI/MissionPanel/VBox/InfoBox/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Objective: Destroy 15 falling hazards. Maintain shield recharge cycles to clear the sector."
+text = "Objective: Destroy 15 falling hazards. Maintain shield recharge cycles to clear the outer sector."
 horizontal_alignment = 1
 autowrap_mode = 2
 
@@ -952,10 +987,11 @@ custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="NextLevelPrompt" type="Label" parent="UI/LevelCompleteScreen/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.8, 0, 1)
 theme_override_font_sizes/font_size = 20
-text = "TAP SCREEN FOR NEXT LEVEL"
+text = "TAP SCREEN FOR NEXT STAGE"
 horizontal_alignment = 1
 
 [node name="NextLevelBtn" type="Button" parent="UI/LevelCompleteScreen"]
@@ -1029,6 +1065,7 @@ custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 
 [node name="VictoryMenuPrompt" type="Label" parent="UI/VictoryScreen/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.662745, 0.235294, 1, 1)
 theme_override_font_sizes/font_size = 20

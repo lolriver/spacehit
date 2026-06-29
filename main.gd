@@ -13,6 +13,9 @@ extends Node2D
 @onready var popup_panel: PanelContainer = %PopupPanel
 @onready var popup_label: Label = %PopupLabel
 
+@onready var boss_panel: PanelContainer = %BossPanel
+@onready var boss_progress_bar: ProgressBar = %BossProgressBar
+
 # Game States Enum
 enum GameState {
 	STATE_MAIN_MENU = 0,
@@ -33,11 +36,16 @@ var current_state: int = GameState.STATE_MAIN_MENU
 var sensitivity: float = 1.6
 var high_scores: Array = []
 
-# Game Progression stats
+# Game Progression stats (Infinite Mode)
 var score: int = 0
-var current_level: int = 1
+var current_level: int = 1 # Serves as current Stage
 var level_goal_kills: int = 15
 var level_current_kills: int = 0
+
+# Boss State
+var is_boss_active: bool = false
+var boss_health: int = 0
+var boss_max_health: int = 0
 
 var viewport_width: float = 720.0
 
@@ -45,16 +53,18 @@ var viewport_width: float = 720.0
 var shake_intensity: float = 0.0
 var shake_decay: float = 5.0
 
-# Styles for Segmented Bars
+# Styles for Segmented Bars & Boss HUD
 var style_empty: StyleBoxFlat
 var style_shield_full: StyleBoxFlat
 var style_boost_full: StyleBoxFlat
+var style_boss_bg: StyleBoxFlat
+var style_boss_fill: StyleBoxFlat
 
 func _ready() -> void:
 	viewport_width = get_viewport_rect().size.x
 	spawn_timer.timeout.connect(_on_spawn_timer_timeout)
 	
-	# Initialize HUD segmented bar graphics
+	# Initialize HUD styleboxes dynamically
 	init_bar_styles()
 	
 	# Load saved configurations
@@ -116,6 +126,25 @@ func init_bar_styles() -> void:
 	style_boost_full.shadow_size = 4
 	style_boost_full.set_corner_radius_all(2)
 
+	style_boss_bg = StyleBoxFlat.new()
+	style_boss_bg.bg_color = Color(0.02, 0.02, 0.05, 0.75)
+	style_boss_bg.border_width_left = 1
+	style_boss_bg.border_width_top = 1
+	style_boss_bg.border_width_right = 1
+	style_boss_bg.border_width_bottom = 1
+	style_boss_bg.border_color = Color(1.0, 0.0, 0.47, 0.5)
+	style_boss_bg.set_corner_radius_all(4)
+
+	style_boss_fill = StyleBoxFlat.new()
+	style_boss_fill.bg_color = Color(1.0, 0.0, 0.47, 1.0)
+	style_boss_fill.shadow_color = Color(1.0, 0.0, 0.47, 0.6)
+	style_boss_fill.shadow_size = 4
+	style_boss_fill.set_corner_radius_all(4)
+
+	if boss_progress_bar:
+		boss_progress_bar.add_theme_stylebox_override("background", style_boss_bg)
+		boss_progress_bar.add_theme_stylebox_override("fill", style_boss_fill)
+
 func _process(delta: float) -> void:
 	# Screen Shake Handler
 	if shake_intensity > 0.0:
@@ -147,6 +176,9 @@ func set_state(new_state: int) -> void:
 	# State-specific logic initialization
 	if new_state == GameState.STATE_MAIN_MENU:
 		clear_game_entities()
+		is_boss_active = false
+		if boss_panel:
+			boss_panel.hide()
 		if player:
 			player.hide()
 			player.set_process(false)
@@ -157,6 +189,8 @@ func set_state(new_state: int) -> void:
 		if player:
 			player.show()
 			player.set_process(true)
+		if %Sub:
+			%Sub.text = "STAGE " + str(current_level)
 	elif new_state == GameState.STATE_LEADERBOARD_PANEL:
 		render_leaderboard_list()
 	elif new_state == GameState.STATE_MISSION_PANEL:
@@ -165,16 +199,12 @@ func set_state(new_state: int) -> void:
 		%NameEntryScoreLabel.text = "FINAL SCORE: " + str(score)
 		%NameInput.text = ""
 		%NameInput.grab_focus()
-	elif new_state == GameState.STATE_VICTORY:
-		%VictoryScoreLabel.text = "FINAL SCORE: " + str(score)
-		clear_game_entities()
 	elif new_state == GameState.STATE_LEVEL_COMPLETE:
-		# Clear standard entities to prevent overlap issues
 		clear_game_entities()
 
 func clear_game_entities() -> void:
 	for child in get_children():
-		if child.is_in_group("enemies") or child.is_in_group("lasers") or child is CPUParticles2D:
+		if child.is_in_group("enemies") or child.is_in_group("lasers") or child.is_in_group("enemy_bullets") or child is CPUParticles2D:
 			child.queue_free()
 
 func start_game() -> void:
@@ -182,6 +212,9 @@ func start_game() -> void:
 	current_level = 1
 	level_goal_kills = 15
 	level_current_kills = 0
+	is_boss_active = false
+	if boss_panel:
+		boss_panel.hide()
 	
 	update_score_label()
 	
@@ -198,37 +231,144 @@ func spawn_enemy() -> void:
 	if current_state != GameState.STATE_PLAYING or get_tree().paused:
 		return
 		
+	# Boss Spawn Control (Every 5th stage: 5, 10, 15, 20, 25...)
+	if current_level % 5 == 0:
+		if not is_boss_active:
+			is_boss_active = true
+			var boss = enemy_scene.instantiate()
+			boss.enemy_type = 5 # TYPE_BOSS
+			boss.position = Vector2(360.0, -120.0)
+			boss.speed = 70.0
+			add_child(boss)
+		else:
+			# Background meteors at 15% rate during boss fight
+			if randf() < 0.15:
+				var meteor = enemy_scene.instantiate()
+				meteor.enemy_type = 1 # TYPE_FAST
+				meteor.position = Vector2(randf_range(40.0, viewport_width - 40.0), -50.0)
+				meteor.speed = randf_range(320.0, 480.0)
+				add_child(meteor)
+		return
+		
 	if enemy_scene:
 		var enemy = enemy_scene.instantiate()
 		var spawn_x = randf_range(40.0, viewport_width - 40.0)
 		enemy.position = Vector2(spawn_x, -50.0)
 		
-		# Probability matrix based on Level
+		# Select enemy type based on Stage Probability weights
 		var selected_type = 0 # NORMAL
 		var roll = randf()
 		
-		if current_level == 2:
-			if roll < 0.30:
-				selected_type = 1 # FAST
-		elif current_level == 3:
-			if roll < 0.15:
-				selected_type = 2 # HEAVY
-			elif roll < 0.45:
-				selected_type = 1 # FAST
+		match current_level:
+			1:
+				selected_type = 0 # 100% Normal
+			2:
+				selected_type = 1 if roll < 0.30 else 0 # 30% Fast, 70% Normal
+			3:
+				# 45% Normal, 30% Fast, 25% Kamikaze
+				if roll < 0.25:
+					selected_type = 3 # KAMIKAZE
+				elif roll < 0.55:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			4:
+				# 30% Normal, 30% Fast, 20% Kamikaze, 20% Fighter
+				if roll < 0.20:
+					selected_type = 4 # FIGHTER
+				elif roll < 0.40:
+					selected_type = 3 # KAMIKAZE
+				elif roll < 0.70:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			6:
+				# 40% Normal, 30% Fast, 15% Heavy, 15% Drones
+				if roll < 0.15:
+					selected_type = 8 # DRONE
+				elif roll < 0.30:
+					selected_type = 2 # HEAVY
+				elif roll < 0.60:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			7:
+				# 45% Normal, 30% Fast, 25% Stealth
+				if roll < 0.25:
+					selected_type = 6 # STEALTH
+				elif roll < 0.55:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			8:
+				# 45% Normal, 30% Fast, 25% Mine
+				if roll < 0.25:
+					selected_type = 7 # MINE
+				elif roll < 0.55:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			9, 11, 12, 13, 14, 16, 17, 18, 19:
+				# Balanced selections (all 8 standard hazards)
+				if roll < 0.12:
+					selected_type = 8 # DRONE
+				elif roll < 0.24:
+					selected_type = 7 # MINE
+				elif roll < 0.36:
+					selected_type = 6 # STEALTH
+				elif roll < 0.48:
+					selected_type = 4 # FIGHTER
+				elif roll < 0.60:
+					selected_type = 3 # KAMIKAZE
+				elif roll < 0.72:
+					selected_type = 2 # HEAVY
+				elif roll < 0.86:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
+			_: # Post 20+ scaling stages
+				if roll < 0.13:
+					selected_type = 8 # DRONE
+				elif roll < 0.26:
+					selected_type = 7 # MINE
+				elif roll < 0.39:
+					selected_type = 6 # STEALTH
+				elif roll < 0.52:
+					selected_type = 4 # FIGHTER
+				elif roll < 0.64:
+					selected_type = 3 # KAMIKAZE
+				elif roll < 0.76:
+					selected_type = 2 # HEAVY
+				elif roll < 0.88:
+					selected_type = 1 # FAST
+				else:
+					selected_type = 0
 				
 		enemy.enemy_type = selected_type
 		
-		# Speed parameters per level
-		var base_speed_min = 200.0 + (score / 10.0) * 10.0
-		var base_speed_max = 350.0 + (score / 10.0) * 15.0
+		# Speed ranges scales with score
+		var base_speed_min = 200.0 + (score / 10.0) * 8.0
+		var base_speed_max = 350.0 + (score / 10.0) * 12.0
 		if selected_type == 1: # Fast
 			base_speed_min *= 1.6
 			base_speed_max *= 1.6
 		elif selected_type == 2: # Heavy
 			base_speed_min *= 0.7
 			base_speed_max *= 0.7
+		elif selected_type == 3: # Kamikaze
+			base_speed_min *= 1.1
+			base_speed_max *= 1.1
+		elif selected_type == 6: # Stealth
+			base_speed_min *= 0.85
+			base_speed_max *= 0.85
+		elif selected_type == 7: # Mine
+			base_speed_min *= 0.6
+			base_speed_max *= 0.6
+		elif selected_type == 8: # Drone
+			base_speed_min *= 0.95
+			base_speed_max *= 0.95
 			
-		enemy.speed = randf_range(clamp(base_speed_min, 150.0, 600.0), clamp(base_speed_max, 250.0, 900.0))
+		enemy.speed = randf_range(clamp(base_speed_min, 100.0, 650.0), clamp(base_speed_max, 200.0, 980.0))
 		add_child(enemy)
 
 func add_score(amount: int) -> void:
@@ -237,19 +377,22 @@ func add_score(amount: int) -> void:
 	score += amount
 	update_score_label()
 	
-	# Increment level progression
+	# Skip standard kill updates on Boss fights
+	if current_level % 5 == 0:
+		return
+		
 	level_current_kills += 1
 	
-	# Check Level Clear condition
+	# Check Stage Clear
 	if level_current_kills >= level_goal_kills:
 		trigger_level_clear()
 	else:
 		# Gradually increase spawn rate in normal play
 		var new_wait_time = 1.2 - (score / 10.0) * 0.04
-		# Level 2 starts faster, Level 3 even faster
 		var min_wait = 0.35
-		if current_level == 2: min_wait = 0.3
-		elif current_level == 3: min_wait = 0.25
+		if current_level >= 10: min_wait = 0.18
+		elif current_level >= 5: min_wait = 0.22
+		elif current_level >= 2: min_wait = 0.28
 		spawn_timer.wait_time = max(min_wait, new_wait_time)
 
 func update_score_label() -> void:
@@ -288,8 +431,26 @@ func spawn_player_hit_effect(hit_position: Vector2) -> void:
 		explosion.scale = Vector2(1.5, 1.5)
 		add_child(explosion)
 
+# Boss HUD controls
+func show_boss_health_bar(max_hp: int) -> void:
+	if boss_panel and boss_progress_bar:
+		boss_max_health = max_hp
+		boss_progress_bar.max_value = max_hp
+		boss_progress_bar.value = max_hp
+		boss_panel.show()
+
+func update_boss_health(hp: int, max_hp: int) -> void:
+	if boss_progress_bar:
+		boss_progress_bar.value = hp
+
+func on_boss_defeated() -> void:
+	is_boss_active = false
+	if boss_panel:
+		boss_panel.hide()
+	trigger_level_clear()
+
 func trigger_level_clear() -> void:
-	# Fully restore player system shields as completion bonus
+	# Fully restore player shields as a Stage Clear reward!
 	if player:
 		player.shield = player.max_shield
 		player.update_hud()
@@ -297,24 +458,20 @@ func trigger_level_clear() -> void:
 	set_state(GameState.STATE_LEVEL_COMPLETE)
 
 func advance_level() -> void:
-	if current_level == 1:
-		current_level = 2
-		level_goal_kills = 30
-		level_current_kills = 0
-		spawn_timer.wait_time = 1.0
-		set_state(GameState.STATE_PLAYING)
-	elif current_level == 2:
-		current_level = 3
-		level_goal_kills = 50
-		level_current_kills = 0
-		spawn_timer.wait_time = 0.85
-		set_state(GameState.STATE_PLAYING)
-	else:
-		# Level 3 completed -> game victory!
-		if check_high_score_eligibility():
-			set_state(GameState.STATE_NAME_ENTRY)
-		else:
-			set_state(GameState.STATE_VICTORY)
+	# Go to next stage infinitely!
+	current_level += 1
+	# Stage goal increases
+	level_goal_kills = 15 + current_level * 5
+	level_current_kills = 0
+	
+	# Adjust spawn rate based on level progression
+	spawn_timer.wait_time = max(0.18, 1.2 - (current_level * 0.05))
+	
+	# Update HUD Subtitle
+	if %Sub:
+		%Sub.text = "STAGE " + str(current_level)
+		
+	set_state(GameState.STATE_PLAYING)
 
 func trigger_game_over() -> void:
 	if current_state == GameState.STATE_GAME_OVER or current_state == GameState.STATE_NAME_ENTRY:
@@ -367,7 +524,6 @@ func adjust_sensitivity(amount: float) -> void:
 	save_settings()
 
 func close_sub_panel() -> void:
-	# Closes Leaderboard or Mission control panels, returning back to Menu or Active Play
 	if player and player.visible:
 		set_state(GameState.STATE_PLAYING)
 	else:
@@ -387,7 +543,7 @@ func load_high_scores() -> void:
 				high_scores = json.data
 				return
 				
-	# Load default scoreboard values
+	# Default Scores
 	high_scores = [
 		{"name": "COMMANDER", "score": 1000},
 		{"name": "VECTORS", "score": 600},
@@ -480,7 +636,6 @@ func render_leaderboard_list() -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.add_theme_font_size_override("font_size", 22)
 		
-		# Visual styling for podium places
 		if i == 0:
 			label.add_theme_color_override("font_color", Color(1.0, 0.8, 0, 1.0)) # Gold
 		elif i == 1:
@@ -496,16 +651,38 @@ func update_mission_intel() -> void:
 	if not %MissionLevelLabel:
 		return
 	
-	%MissionLevelLabel.text = "LEVEL " + str(current_level)
-	%MissionProgressLabel.text = "GOAL PROGRESS: %d / %d" % [level_current_kills, level_goal_kills]
+	%MissionLevelLabel.text = "STAGE " + str(current_level)
 	
-	match current_level:
-		1:
-			%MissionDescLabel.text = "Objective: Destroy 15 falling hazards. Maintain shield recharge cycles to clear the outer sector."
-		2:
-			%MissionDescLabel.text = "Objective: Destroy 30 hazard variants. Extreme solar flares have spawned small, ultra-fast meteors. Enhance firing speeds using Boost Overdrive."
-		3:
-			%MissionDescLabel.text = "Objective: Destroy 50 hazard threats. Heavy multi-layer anomalies detected. Focus sustained fire to break them apart into fragments."
+	if current_level % 5 == 0:
+		%MissionProgressLabel.text = "GOAL: ELIMINATE BOSS TARGET"
+		match current_level % 20:
+			5:
+				%MissionDescLabel.text = "Boss Fight: Vanguard Outpost. Heavy hexagonal satellite firing dual angled lasers. Dodging meteors is critical."
+			10:
+				%MissionDescLabel.text = "Boss Fight: Goliath Cruiser. Triangular dreadnought firing 3-way spread lasers. Triggers a reflecting cyan plasma shield periodically."
+			15:
+				%MissionDescLabel.text = "Boss Fight: Carrier Leviathan. Massive transport ship spawning supportive fighter jets and shooting homing purple lasers."
+			0:
+				%MissionDescLabel.text = "Boss Fight: Hyperion Dreadnought. Ultimate fortress firing sweeping radial rings and drawing center charging death beams."
+	else:
+		%MissionProgressLabel.text = "GOAL PROGRESS: %d / %d" % [level_current_kills, level_goal_kills]
+		match current_level:
+			1:
+				%MissionDescLabel.text = "Objective: Destroy 15 falling hazards. Maintain shield recharge cycles to clear the outer sector."
+			2:
+				%MissionDescLabel.text = "Objective: Destroy 20 hazard variants. Small, ultra-fast meteors detected. Enhance firing speeds using Boost Overdrive."
+			3:
+				%MissionDescLabel.text = "Objective: Destroy 25 hazard variants. Shooting Stars detected: they charge directly towards your ship X position."
+			4:
+				%MissionDescLabel.text = "Objective: Destroy 30 threats. Fighter ships detected: they move in a zig-zag flight pattern and shoot bullets downwards."
+			6:
+				%MissionDescLabel.text = "Objective: Destroy 35 hazards. Hunter Drones active: they lock onto your horizontal position to fire continuous green streams."
+			7:
+				%MissionDescLabel.text = "Objective: Destroy 40 hazards. Stealth Bombers active: they remain mostly invisible but fade in to fire 3-way spreads."
+			8:
+				%MissionDescLabel.text = "Objective: Destroy 45 hazards. Gravity Mines active: shooting them detonates a dangerous radial burst of 8 shrapnel bullets."
+			_:
+				%MissionDescLabel.text = "Objective: Destroy %d threats. High threat levels. Mixed fleet active including standard, fast, heavy, stealth, mines, and drones." % level_goal_kills
 
 func _input(event: InputEvent) -> void:
 	# Touch inputs for transitions
