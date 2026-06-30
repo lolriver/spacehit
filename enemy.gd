@@ -50,6 +50,8 @@ func setup_type_properties() -> void:
 			$Polygon2D.scale = Vector2(1, 1)
 			$Outline.scale = Vector2(1, 1)
 			$Outline.default_color = Color(1.0, 0.5, 0.2, 1.0) # Orange
+			_apply_glow(Color(1.0, 0.5, 0.2, 0.12), Vector2(1, 1))
+			_apply_cracks(Color(1.0, 0.5, 0.2, 0.35), Vector2(1, 1))
 		1: # TYPE_FAST
 			max_health = 1
 			health = 1
@@ -57,6 +59,8 @@ func setup_type_properties() -> void:
 			$Outline.scale = Vector2(0.6, 0.6)
 			$Outline.default_color = Color(1.0, 0.1, 0.3, 1.0) # Hot Red
 			$CollisionShape2D.scale = Vector2(0.6, 0.6)
+			_apply_glow(Color(1.0, 0.1, 0.3, 0.15), Vector2(0.6, 0.6))
+			_apply_cracks(Color(1.0, 0.1, 0.3, 0.4), Vector2(0.6, 0.6))
 		2: # TYPE_HEAVY
 			max_health = 3
 			health = 3
@@ -65,6 +69,8 @@ func setup_type_properties() -> void:
 			$Outline.default_color = Color(0.66, 0.23, 1.0, 1.0) # Purple
 			$CollisionShape2D.scale = Vector2(1.8, 1.8)
 			$Polygon2D.color = Color(0.12, 0.08, 0.18, 1.0)
+			_apply_glow(Color(0.66, 0.23, 1.0, 0.15), Vector2(1.8, 1.8))
+			_apply_cracks(Color(0.66, 0.23, 1.0, 0.3), Vector2(1.8, 1.8))
 		3: # TYPE_KAMIKAZE (Shooting Star)
 			max_health = 1
 			health = 1
@@ -72,6 +78,8 @@ func setup_type_properties() -> void:
 			$Outline.scale = Vector2(0.7, 1.3)
 			$Outline.default_color = Color(0.0, 1.0, 0.8, 1.0) # Cyan
 			$CollisionShape2D.scale = Vector2(0.8, 1.2)
+			_apply_glow(Color(0.0, 1.0, 0.8, 0.15), Vector2(0.7, 1.3))
+			_apply_cracks(Color(0.0, 1.0, 0.8, 0.3), Vector2(0.7, 1.3))
 			charge_timer = 0.5
 			var player_node = get_tree().current_scene.get_node_or_null("Player")
 			var target_x = player_node.global_position.x if player_node else spawn_x
@@ -85,6 +93,8 @@ func setup_type_properties() -> void:
 			$CollisionShape2D.scale = Vector2(1.2, 1.2)
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, 20), Vector2(-15, -15), Vector2(-5, -5), Vector2(5, -5), Vector2(15, -15)])
 			$Outline.points = PackedVector2Array([Vector2(0, 20), Vector2(-15, -15), Vector2(-5, -5), Vector2(5, -5), Vector2(15, -15), Vector2(0, 20)])
+			_apply_glow_custom(Color(1.0, 0.0, 0.6, 0.15), $Outline.points, Vector2(1.2, 1.2))
+			_hide_cracks()
 			
 			var t = Timer.new()
 			t.wait_time = 1.2
@@ -101,6 +111,8 @@ func setup_type_properties() -> void:
 			modulate.a = 0.25
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, 15), Vector2(-22, -10), Vector2(-8, -2), Vector2(8, -2), Vector2(22, -10)])
 			$Outline.points = PackedVector2Array([Vector2(0, 15), Vector2(-22, -10), Vector2(-8, -2), Vector2(8, -2), Vector2(22, -10), Vector2(0, 15)])
+			_apply_glow_custom(Color(0.4, 0.6, 0.8, 0.1), $Outline.points, Vector2(1.2, 1.2))
+			_hide_cracks()
 		7: # TYPE_MINE (Stationary/slow drift, detonates radial bullets when shot)
 			max_health = 1
 			health = 1
@@ -110,6 +122,8 @@ func setup_type_properties() -> void:
 			$CollisionShape2D.scale = Vector2(1.1, 1.1)
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, -15), Vector2(5, -5), Vector2(15, 0), Vector2(5, 5), Vector2(0, 15), Vector2(-5, 5), Vector2(-15, 0), Vector2(-5, -5)])
 			$Outline.points = PackedVector2Array([Vector2(0, -15), Vector2(5, -5), Vector2(15, 0), Vector2(5, 5), Vector2(0, 15), Vector2(-5, 5), Vector2(-15, 0), Vector2(-5, -5), Vector2(0, -15)])
+			_apply_glow_custom(Color(1.0, 0.1, 0.1, 0.2), $Outline.points, Vector2(1.1, 1.1))
+			_hide_cracks()
 		8: # TYPE_DRONE (Green diamond, locks on player's X, fires rapid green beams)
 			max_health = 2
 			health = 2
@@ -119,6 +133,8 @@ func setup_type_properties() -> void:
 			$CollisionShape2D.scale = Vector2(1.0, 1.0)
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, -12), Vector2(12, 0), Vector2(0, 12), Vector2(-12, 0)])
 			$Outline.points = PackedVector2Array([Vector2(0, -12), Vector2(12, 0), Vector2(0, 12), Vector2(-12, 0), Vector2(0, -12)])
+			_apply_glow_custom(Color(0.1, 1.0, 0.2, 0.15), $Outline.points, Vector2(1.0, 1.0))
+			_hide_cracks()
 			
 			var t = Timer.new()
 			t.wait_time = 0.65
@@ -126,7 +142,39 @@ func setup_type_properties() -> void:
 			t.timeout.connect(drone_shoot)
 			add_child(t)
 		5: # TYPE_BOSS (Stage-based profiles)
+			_hide_cracks()
 			setup_boss_profile()
+
+func _apply_glow(glow_color: Color, s: Vector2) -> void:
+	var glow = get_node_or_null("Glow")
+	if glow:
+		glow.default_color = glow_color
+		glow.scale = s
+
+func _apply_cracks(crack_color: Color, s: Vector2) -> void:
+	var c1 = get_node_or_null("SurfaceCrack1")
+	var c2 = get_node_or_null("SurfaceCrack2")
+	if c1:
+		c1.default_color = crack_color
+		c1.scale = s
+		c1.visible = true
+	if c2:
+		c2.default_color = Color(crack_color.r, crack_color.g, crack_color.b, crack_color.a * 0.7)
+		c2.scale = s
+		c2.visible = true
+
+func _apply_glow_custom(glow_color: Color, pts: PackedVector2Array, s: Vector2) -> void:
+	var glow = get_node_or_null("Glow")
+	if glow:
+		glow.points = pts
+		glow.default_color = glow_color
+		glow.scale = s
+
+func _hide_cracks() -> void:
+	var c1 = get_node_or_null("SurfaceCrack1")
+	var c2 = get_node_or_null("SurfaceCrack2")
+	if c1: c1.visible = false
+	if c2: c2.visible = false
 
 func setup_boss_profile() -> void:
 	var main_scene = get_tree().current_scene
@@ -142,6 +190,7 @@ func setup_boss_profile() -> void:
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, -30), Vector2(30, -12), Vector2(30, 12), Vector2(0, 30), Vector2(-30, 12), Vector2(-30, -12)])
 			$Outline.points = PackedVector2Array([Vector2(0, -30), Vector2(30, -12), Vector2(30, 12), Vector2(0, 30), Vector2(-30, 12), Vector2(-30, -12), Vector2(0, -30)])
 			$Polygon2D.color = Color(0.08, 0.04, 0.15, 1.0)
+			_apply_glow_custom(Color(1.0, 0.0, 0.47, 0.18), $Outline.points, Vector2(2.5, 2.5))
 			
 			var t_shoot = Timer.new()
 			t_shoot.wait_time = 0.8
@@ -164,6 +213,7 @@ func setup_boss_profile() -> void:
 			$Polygon2D.polygon = PackedVector2Array([Vector2(0, 30), Vector2(-35, -20), Vector2(0, -8), Vector2(35, -20)])
 			$Outline.points = PackedVector2Array([Vector2(0, 30), Vector2(-35, -20), Vector2(0, -8), Vector2(35, -20), Vector2(0, 30)])
 			$Polygon2D.color = Color(0.15, 0.1, 0.02, 1.0)
+			_apply_glow_custom(Color(1.0, 0.8, 0.0, 0.18), $Outline.points, Vector2(2.5, 2.5))
 			
 			var t_goliath = Timer.new()
 			t_goliath.wait_time = 1.0
@@ -186,6 +236,7 @@ func setup_boss_profile() -> void:
 			$Polygon2D.polygon = PackedVector2Array([Vector2(-45, -15), Vector2(-45, 15), Vector2(-15, 22), Vector2(15, 22), Vector2(45, 15), Vector2(45, -15), Vector2(0, -25)])
 			$Outline.points = PackedVector2Array([Vector2(-45, -15), Vector2(-45, 15), Vector2(-15, 22), Vector2(15, 22), Vector2(45, 15), Vector2(45, -15), Vector2(0, -25), Vector2(-45, -15)])
 			$Polygon2D.color = Color(0.05, 0.02, 0.12, 1.0)
+			_apply_glow_custom(Color(0.66, 0.23, 1.0, 0.18), $Outline.points, Vector2(2.5, 2.5))
 			
 			var t_fighter = Timer.new()
 			t_fighter.wait_time = 4.2
@@ -208,6 +259,7 @@ func setup_boss_profile() -> void:
 			$Polygon2D.polygon = PackedVector2Array([Vector2(-35, -25), Vector2(-15, 0), Vector2(15, 0), Vector2(35, -25), Vector2(25, 25), Vector2(8, 12), Vector2(0, 30), Vector2(-8, 12), Vector2(-25, 25)])
 			$Outline.points = PackedVector2Array([Vector2(-35, -25), Vector2(-15, 0), Vector2(15, 0), Vector2(35, -25), Vector2(25, 25), Vector2(8, 12), Vector2(0, 30), Vector2(-8, 12), Vector2(-25, 25), Vector2(-35, -25)])
 			$Polygon2D.color = Color(0.16, 0.02, 0.02, 1.0)
+			_apply_glow_custom(Color(1.0, 0.2, 0.1, 0.2), $Outline.points, Vector2(2.6, 2.6))
 			
 			var t_beam = Timer.new()
 			t_beam.wait_time = 4.6
@@ -221,9 +273,15 @@ func setup_boss_profile() -> void:
 			t_radial.timeout.connect(dreadnought_radial_burst)
 			add_child(t_radial)
 
-	# Trigger health bar synchronization
+	# Trigger health bar synchronization with boss name
+	var boss_display_name = "UNKNOWN"
+	match boss_profile:
+		1: boss_display_name = "VANGUARD OUTPOST"
+		2: boss_display_name = "GOLIATH CRUISER"
+		3: boss_display_name = "CARRIER LEVIATHAN"
+		4: boss_display_name = "HYPERION DREADNOUGHT"
 	if main_scene and main_scene.has_method("show_boss_health_bar"):
-		main_scene.show_boss_health_bar(max_health)
+		main_scene.show_boss_health_bar(max_health, boss_display_name)
 
 func _physics_process(delta: float) -> void:
 	time_elapsed += delta
@@ -498,4 +556,4 @@ func trigger_mine_explosion() -> void:
 			var line = b.get_node_or_null("Line2D")
 			if line:
 				line.default_color = Color(1.0, 0.1, 0.1, 1.0) # Red mine fragments
-			get_parent().add_child(b)
+			get_parent().call_deferred("add_child", b)
