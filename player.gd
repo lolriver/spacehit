@@ -24,6 +24,11 @@ var shield_recharge_timer: float = 0.0
 
 var is_boosting: bool = false
 var is_boost_button_pressed: bool = false # Managed by Main UI controls
+var is_double_tap_boosting: bool = false # Managed by double-tap detection
+
+# Double-tap detection
+var last_tap_time: float = 0.0
+var double_tap_threshold: float = 0.3 # 300ms window
 
 var viewport_width: float = 720.0
 var half_width: float = 30.0
@@ -40,6 +45,8 @@ func reset_player_stats() -> void:
 	is_invulnerable = false
 	is_boosting = false
 	is_boost_button_pressed = false
+	is_double_tap_boosting = false
+	last_tap_time = 0.0
 	visible = true
 	set_process(true)
 	
@@ -51,6 +58,25 @@ func reset_player_stats() -> void:
 	position = Vector2(viewport_size.x / 2.0, viewport_size.y - 120.0)
 	
 	call_deferred("update_hud")
+
+func _input(event: InputEvent) -> void:
+	# Double-tap detection for boost toggle
+	if event is InputEventScreenTouch and event.pressed:
+		var current_time = Time.get_ticks_msec() / 1000.0
+		if current_time - last_tap_time <= double_tap_threshold:
+			# Double tap detected — toggle boost
+			is_double_tap_boosting = not is_double_tap_boosting
+			last_tap_time = 0.0 # Reset to prevent triple-tap re-toggle
+		else:
+			last_tap_time = current_time
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		# Also support double-click on desktop for testing
+		var current_time = Time.get_ticks_msec() / 1000.0
+		if current_time - last_tap_time <= double_tap_threshold:
+			is_double_tap_boosting = not is_double_tap_boosting
+			last_tap_time = 0.0
+		else:
+			last_tap_time = current_time
 
 func _process(delta: float) -> void:
 	# 1. Movement: Follow mouse/touch drag, ignoring touches on HUD buttons
@@ -93,11 +119,9 @@ func _process(delta: float) -> void:
 		if invun_timer <= 0.0:
 			is_invulnerable = false
 			visible = true
-			set_deferred("monitoring", true)
-			set_deferred("monitorable", true)
 
 	# 3. Boost Overdrive Firing Speed Handler
-	var want_boost = Input.is_key_pressed(KEY_SPACE) or is_boost_button_pressed
+	var want_boost = Input.is_key_pressed(KEY_SPACE) or is_boost_button_pressed or is_double_tap_boosting
 	if want_boost and boost > 0.0:
 		if not is_boosting:
 			is_boosting = true
@@ -106,6 +130,7 @@ func _process(delta: float) -> void:
 		boost -= delta * 1.5 # Drains in ~2.7 seconds
 		if boost < 0.0:
 			boost = 0.0
+			is_double_tap_boosting = false # Auto-deactivate on empty
 	else:
 		if is_boosting:
 			is_boosting = false
@@ -215,9 +240,6 @@ func make_invulnerable(duration: float) -> void:
 	is_invulnerable = true
 	invun_timer = duration
 	flash_timer = 0.0
-	# Temporarily disable physical collisions safely
-	set_deferred("monitoring", false)
-	set_deferred("monitorable", false)
 
 func update_hud() -> void:
 	var main_scene = get_tree().current_scene
