@@ -204,7 +204,7 @@ func set_state(new_state: int) -> void:
 
 func clear_game_entities() -> void:
 	for child in get_children():
-		if child.is_in_group("enemies") or child.is_in_group("lasers") or child.is_in_group("enemy_bullets") or child is CPUParticles2D:
+		if child.is_in_group("enemies") or child.is_in_group("lasers") or child.is_in_group("enemy_bullets") or child.is_in_group("pickups") or child is CPUParticles2D:
 			child.queue_free()
 
 func start_game() -> void:
@@ -400,6 +400,7 @@ func update_score_label() -> void:
 		score_label.text = str(score)
 
 func update_player_stats(lives: int, shield: int, boost: float) -> void:
+	print("[UI] Received stats: lives=", lives, ", shield=", shield, ", boost=", boost)
 	if lives_label:
 		lives_label.text = str(lives)
 	
