@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://b2p3q4r5s6t7u"]
+
+[ext_resource type="Script" path="res://pickup.gd" id="1_pickup_gd"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 16.0
+
+[node name="Pickup" type="Area2D" groups=["pickups"]]
+collision_layer = 8
+collision_mask = 1
+script = ExtResource("1_pickup_gd")
+
+[node name="Glow" type="Line2D" parent="."]
+z_index = -1
+width = 6.0
+default_color = Color(0, 0.94, 1, 0.15)
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+z_index = 0
+
+[node name="Outline" type="Line2D" parent="."]
+z_index = 1
+width = 2.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_1")
