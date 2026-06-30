@@ -527,6 +527,7 @@ func _on_area_entered(area: Area2D) -> void:
 				if main_scene and main_scene.has_method("on_boss_defeated"):
 					main_scene.on_boss_defeated()
 					
+			check_spawn_pickup()
 			call_deferred("queue_free")
 			
 	elif area.is_in_group("player"):
@@ -557,3 +558,25 @@ func trigger_mine_explosion() -> void:
 			if line:
 				line.default_color = Color(1.0, 0.1, 0.1, 1.0) # Red mine fragments
 			get_parent().call_deferred("add_child", b)
+
+func check_spawn_pickup() -> void:
+	var roll = randf()
+	var spawn_chance = 0.12 # 12% spawn rate for standard enemies
+	if enemy_type == 5:
+		spawn_chance = 1.0 # 100% chance on bosses
+	
+	if roll < spawn_chance:
+		var pickup_scene = load("res://pickup.tscn")
+		if pickup_scene:
+			var pickup = pickup_scene.instantiate()
+			pickup.global_position = global_position
+			
+			# Decide type: 70% shield, 30% heart
+			var type_roll = randf()
+			if type_roll < 0.7:
+				pickup.pickup_type = 0 # SHIELD
+			else:
+				pickup.pickup_type = 1 # HEART
+				
+			get_parent().call_deferred("add_child", pickup)
+
