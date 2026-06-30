@@ -432,21 +432,74 @@ func spawn_player_hit_effect(hit_position: Vector2) -> void:
 		add_child(explosion)
 
 # Boss HUD controls
-func show_boss_health_bar(max_hp: int) -> void:
+var boss_name: String = ""
+var boss_entrance_tween: Tween = null
+
+func show_boss_health_bar(max_hp: int, p_boss_name: String = "UNKNOWN") -> void:
 	if boss_panel and boss_progress_bar:
 		boss_max_health = max_hp
+		boss_health = max_hp
+		boss_name = p_boss_name
 		boss_progress_bar.max_value = max_hp
 		boss_progress_bar.value = max_hp
+		
+		# Set boss name label
+		var name_label = get_node_or_null("%BossNameLabel")
+		if name_label:
+			name_label.text = p_boss_name
+		
+		# Set HP percentage
+		var hp_label = get_node_or_null("%BossHPLabel")
+		if hp_label:
+			hp_label.text = "100%"
+		
+		# Dramatic entrance animation
+		boss_panel.modulate = Color(1, 1, 1, 0)
 		boss_panel.show()
+		
+		if boss_entrance_tween:
+			boss_entrance_tween.kill()
+		boss_entrance_tween = create_tween()
+		# Flash in with a bright white flare then settle
+		boss_entrance_tween.tween_property(boss_panel, "modulate", Color(3, 1, 1, 1), 0.15).set_ease(Tween.EASE_OUT)
+		boss_entrance_tween.tween_property(boss_panel, "modulate", Color(1, 1, 1, 1), 0.3).set_ease(Tween.EASE_IN)
 
 func update_boss_health(hp: int, max_hp: int) -> void:
+	boss_health = hp
 	if boss_progress_bar:
 		boss_progress_bar.value = hp
+	
+	# Update HP percentage label
+	var hp_label = get_node_or_null("%BossHPLabel")
+	if hp_label:
+		var pct = int(round(float(hp) / float(max_hp) * 100.0))
+		hp_label.text = str(pct) + "%"
+	
+	# Dynamic bar color based on remaining HP
+	var hp_ratio = float(hp) / float(max_hp)
+	if style_boss_fill:
+		if hp_ratio <= 0.2:
+			# Critical — pulsing red
+			var pulse = abs(sin(Time.get_ticks_msec() * 0.008))
+			style_boss_fill.bg_color = Color(1.0, lerp(0.0, 0.3, pulse), 0.0, 1.0)
+			style_boss_fill.shadow_color = Color(1.0, 0.1, 0.0, 0.6)
+		elif hp_ratio <= 0.5:
+			# Damaged — orange-yellow
+			style_boss_fill.bg_color = Color(1.0, 0.6, 0.0, 1.0)
+			style_boss_fill.shadow_color = Color(1.0, 0.6, 0.0, 0.6)
+		else:
+			# Healthy — magenta
+			style_boss_fill.bg_color = Color(1.0, 0.0, 0.47, 1.0)
+			style_boss_fill.shadow_color = Color(1.0, 0.0, 0.47, 0.6)
 
 func on_boss_defeated() -> void:
 	is_boss_active = false
 	if boss_panel:
-		boss_panel.hide()
+		# Dramatic defeat flash-out
+		var tween = create_tween()
+		tween.tween_property(boss_panel, "modulate", Color(4, 4, 4, 1), 0.1)
+		tween.tween_property(boss_panel, "modulate", Color(1, 1, 1, 0), 0.4).set_ease(Tween.EASE_IN)
+		tween.tween_callback(boss_panel.hide)
 	trigger_level_clear()
 
 func trigger_level_clear() -> void:
