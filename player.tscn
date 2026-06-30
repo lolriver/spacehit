@@ -10,20 +10,167 @@ collision_layer = 1
 collision_mask = 4
 script = ExtResource("1_player_gd")
 
-[node name="Booster" type="Line2D" parent="."]
-points = PackedVector2Array(0, 10, 0, 20)
-width = 4.0
-default_color = Color(1, 0.4, 0, 0.8)
+; ── GLOW OUTLINE (wide, low-alpha bloom behind everything) ──────────────
+[node name="GlowOutline" type="Line2D" parent="."]
+z_index = -2
+points = PackedVector2Array(0, -30, -6, -18, -10, -10, -14, -4, -26, 8, -28, 14, -22, 16, -16, 12, -10, 14, -6, 18, 0, 20, 6, 18, 10, 14, 16, 12, 22, 16, 28, 14, 26, 8, 14, -4, 10, -10, 6, -18, 0, -30)
+width = 8.0
+default_color = Color(0, 1, 0.8, 0.15)
 
+; ── MAIN BODY (dark teal fuselage) ──────────────────────────────────────
 [node name="Polygon2D" type="Polygon2D" parent="."]
-color = Color(0, 0.4, 0.4, 0.5)
-polygon = PackedVector2Array(0, -25, -20, 15, -10, 10, 10, 10, 20, 15)
+z_index = 0
+color = Color(0.02, 0.15, 0.18, 1)
+polygon = PackedVector2Array(0, -30, -6, -18, -10, -10, -14, -4, -12, 6, -10, 14, -6, 18, 0, 20, 6, 18, 10, 14, 12, 6, 14, -4, 10, -10, 6, -18)
 
+; ── LEFT WING (swept-back, slightly lighter teal) ──────────────────────
+[node name="WingLeft" type="Polygon2D" parent="."]
+z_index = -1
+color = Color(0.03, 0.2, 0.24, 1)
+polygon = PackedVector2Array(-14, -4, -26, 8, -28, 14, -22, 16, -16, 12, -12, 6)
+
+; ── RIGHT WING ─────────────────────────────────────────────────────────
+[node name="WingRight" type="Polygon2D" parent="."]
+z_index = -1
+color = Color(0.03, 0.2, 0.24, 1)
+polygon = PackedVector2Array(14, -4, 26, 8, 28, 14, 22, 16, 16, 12, 12, 6)
+
+; ── LEFT WING PANEL DETAIL (accent stripe) ─────────────────────────────
+[node name="WingPanelLeft" type="Polygon2D" parent="."]
+z_index = 0
+color = Color(0, 0.7, 0.55, 0.25)
+polygon = PackedVector2Array(-15, -1, -23, 9, -22, 12, -14, 4)
+
+; ── RIGHT WING PANEL DETAIL ────────────────────────────────────────────
+[node name="WingPanelRight" type="Polygon2D" parent="."]
+z_index = 0
+color = Color(0, 0.7, 0.55, 0.25)
+polygon = PackedVector2Array(15, -1, 23, 9, 22, 12, 14, 4)
+
+; ── LEFT ENGINE NACELLE ────────────────────────────────────────────────
+[node name="EngineLeft" type="Polygon2D" parent="."]
+z_index = 1
+color = Color(0.015, 0.1, 0.13, 1)
+polygon = PackedVector2Array(-20, 12, -24, 14, -24, 18, -20, 18, -17, 14)
+
+; ── RIGHT ENGINE NACELLE ───────────────────────────────────────────────
+[node name="EngineRight" type="Polygon2D" parent="."]
+z_index = 1
+color = Color(0.015, 0.1, 0.13, 1)
+polygon = PackedVector2Array(20, 12, 24, 14, 24, 18, 20, 18, 17, 14)
+
+; ── ENGINE NACELLE GLOW RINGS ──────────────────────────────────────────
+[node name="EngineRingLeft" type="Line2D" parent="."]
+z_index = 2
+points = PackedVector2Array(-24, 18, -20, 18, -17, 14)
+width = 1.5
+default_color = Color(0, 1, 0.8, 0.5)
+
+[node name="EngineRingRight" type="Line2D" parent="."]
+z_index = 2
+points = PackedVector2Array(24, 18, 20, 18, 17, 14)
+width = 1.5
+default_color = Color(0, 1, 0.8, 0.5)
+
+; ── COCKPIT CANOPY (bright cyan glass) ─────────────────────────────────
+[node name="Cockpit" type="Polygon2D" parent="."]
+z_index = 2
+color = Color(0, 0.85, 0.7, 0.45)
+polygon = PackedVector2Array(0, -22, -4, -10, -3, -2, 0, 0, 3, -2, 4, -10)
+
+; ── COCKPIT HIGHLIGHT (specular glint) ─────────────────────────────────
+[node name="CockpitHighlight" type="Polygon2D" parent="."]
+z_index = 3
+color = Color(0.6, 1, 0.95, 0.3)
+polygon = PackedVector2Array(0, -20, -2, -12, -1, -6, 0, -5, 1, -8, 1.5, -14)
+
+; ── NOSE RIDGE LINE ────────────────────────────────────────────────────
+[node name="NoseRidge" type="Line2D" parent="."]
+z_index = 3
+points = PackedVector2Array(0, -30, 0, -22)
+width = 1.5
+default_color = Color(0, 1, 0.8, 0.6)
+
+; ── BODY CENTER STRIPE ─────────────────────────────────────────────────
+[node name="CenterStripe" type="Line2D" parent="."]
+z_index = 1
+points = PackedVector2Array(0, 0, 0, 16)
+width = 1.0
+default_color = Color(0, 1, 0.8, 0.2)
+
+; ── BODY HULL ACCENT LINES ─────────────────────────────────────────────
+[node name="HullAccentLeft" type="Line2D" parent="."]
+z_index = 1
+points = PackedVector2Array(-5, -16, -9, -6, -11, 4, -9, 12)
+width = 0.8
+default_color = Color(0, 1, 0.8, 0.12)
+
+[node name="HullAccentRight" type="Line2D" parent="."]
+z_index = 1
+points = PackedVector2Array(5, -16, 9, -6, 11, 4, 9, 12)
+width = 0.8
+default_color = Color(0, 1, 0.8, 0.12)
+
+; ── PRIMARY OUTLINE (crisp neon edge) ──────────────────────────────────
 [node name="Outline" type="Line2D" parent="."]
-points = PackedVector2Array(0, -25, -20, 15, -10, 10, 10, 10, 20, 15, 0, -25)
-width = 2.5
+z_index = 4
+points = PackedVector2Array(0, -30, -6, -18, -10, -10, -14, -4, -26, 8, -28, 14, -22, 16, -16, 12, -10, 14, -6, 18, 0, 20, 6, 18, 10, 14, 16, 12, 22, 16, 28, 14, 26, 8, 14, -4, 10, -10, 6, -18, 0, -30)
+width = 2.0
 default_color = Color(0, 1, 0.8, 1)
 
+; ── WING EDGE ACCENTS ──────────────────────────────────────────────────
+[node name="WingEdgeLeft" type="Line2D" parent="."]
+z_index = 4
+points = PackedVector2Array(-14, -4, -26, 8, -28, 14)
+width = 1.2
+default_color = Color(0, 1, 0.8, 0.7)
+
+[node name="WingEdgeRight" type="Line2D" parent="."]
+z_index = 4
+points = PackedVector2Array(14, -4, 26, 8, 28, 14)
+width = 1.2
+default_color = Color(0, 1, 0.8, 0.7)
+
+; ── CENTER BOOSTER FLAME ───────────────────────────────────────────────
+[node name="Booster" type="Line2D" parent="."]
+z_index = 5
+points = PackedVector2Array(-3, 18, 0, 32, 3, 18)
+width = 3.5
+default_color = Color(1, 0.45, 0, 0.85)
+
+[node name="BoosterCore" type="Line2D" parent="."]
+z_index = 6
+points = PackedVector2Array(-1.5, 18, 0, 28, 1.5, 18)
+width = 2.0
+default_color = Color(1, 0.9, 0.4, 0.9)
+
+; ── LEFT WING-TIP BOOSTER FLAME ────────────────────────────────────────
+[node name="BoosterLeft" type="Line2D" parent="."]
+z_index = 5
+points = PackedVector2Array(-22, 17, -21, 26, -19, 17)
+width = 2.5
+default_color = Color(1, 0.4, 0, 0.75)
+
+[node name="BoosterLeftCore" type="Line2D" parent="."]
+z_index = 6
+points = PackedVector2Array(-21.5, 17, -21, 23, -20, 17)
+width = 1.5
+default_color = Color(1, 0.85, 0.35, 0.85)
+
+; ── RIGHT WING-TIP BOOSTER FLAME ───────────────────────────────────────
+[node name="BoosterRight" type="Line2D" parent="."]
+z_index = 5
+points = PackedVector2Array(22, 17, 21, 26, 19, 17)
+width = 2.5
+default_color = Color(1, 0.4, 0, 0.75)
+
+[node name="BoosterRightCore" type="Line2D" parent="."]
+z_index = 6
+points = PackedVector2Array(21.5, 17, 21, 23, 20, 17)
+width = 1.5
+default_color = Color(1, 0.85, 0.35, 0.85)
+
+; ── COLLISION & MARKERS (unchanged) ────────────────────────────────────
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_1")
 

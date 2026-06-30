@@ -127,16 +127,60 @@ func _process(delta: float) -> void:
 		if shield >= max_shield:
 			shield_recharge_timer = 0.0
 
-	# 5. Booster Visual Flame Scaling
+	# 5. Triple Booster Visual Flame Animation (center + wing-tips)
 	if booster:
+		var bl = get_node_or_null("BoosterLeft")
+		var br = get_node_or_null("BoosterRight")
+		var bc = get_node_or_null("BoosterCore")
+		var blc = get_node_or_null("BoosterLeftCore")
+		var brc = get_node_or_null("BoosterRightCore")
+		
 		if is_boosting:
-			booster.width = randf_range(6.0, 9.0)
-			booster.points = PackedVector2Array([Vector2(0, 10), Vector2(0, randf_range(28.0, 36.0))])
-			booster.default_color = Color(1.0, 0.0, 0.47, 1.0) # Pink boost flame
+			# Center flame - big and magenta
+			booster.points = PackedVector2Array([Vector2(-3, 18), Vector2(0, randf_range(36.0, 44.0)), Vector2(3, 18)])
+			booster.width = randf_range(4.5, 6.0)
+			booster.default_color = Color(1.0, 0.0, 0.47, 0.9)
+			if bc:
+				bc.points = PackedVector2Array([Vector2(-1.5, 18), Vector2(0, randf_range(30.0, 38.0)), Vector2(1.5, 18)])
+				bc.default_color = Color(1.0, 0.7, 0.9, 0.95)
+			# Wing flames - extended and magenta
+			if bl:
+				bl.points = PackedVector2Array([Vector2(-22, 17), Vector2(-21, randf_range(28.0, 34.0)), Vector2(-19, 17)])
+				bl.width = randf_range(3.0, 4.5)
+				bl.default_color = Color(1.0, 0.0, 0.47, 0.85)
+			if br:
+				br.points = PackedVector2Array([Vector2(22, 17), Vector2(21, randf_range(28.0, 34.0)), Vector2(19, 17)])
+				br.width = randf_range(3.0, 4.5)
+				br.default_color = Color(1.0, 0.0, 0.47, 0.85)
+			if blc:
+				blc.points = PackedVector2Array([Vector2(-21.5, 17), Vector2(-21, randf_range(24.0, 30.0)), Vector2(-20, 17)])
+				blc.default_color = Color(1.0, 0.7, 0.9, 0.9)
+			if brc:
+				brc.points = PackedVector2Array([Vector2(21.5, 17), Vector2(21, randf_range(24.0, 30.0)), Vector2(20, 17)])
+				brc.default_color = Color(1.0, 0.7, 0.9, 0.9)
 		else:
-			booster.width = randf_range(2.5, 4.0)
-			booster.points = PackedVector2Array([Vector2(0, 10), Vector2(0, randf_range(16.0, 20.0))])
-			booster.default_color = Color(1.0, 0.5, 0.0, 0.8) # Orange standard flame
+			# Center flame - normal orange flicker
+			booster.points = PackedVector2Array([Vector2(-3, 18), Vector2(0, randf_range(28.0, 34.0)), Vector2(3, 18)])
+			booster.width = randf_range(3.0, 4.0)
+			booster.default_color = Color(1.0, 0.45, 0.0, 0.85)
+			if bc:
+				bc.points = PackedVector2Array([Vector2(-1.5, 18), Vector2(0, randf_range(24.0, 30.0)), Vector2(1.5, 18)])
+				bc.default_color = Color(1.0, 0.9, 0.4, 0.9)
+			# Wing flames - normal orange
+			if bl:
+				bl.points = PackedVector2Array([Vector2(-22, 17), Vector2(-21, randf_range(22.0, 27.0)), Vector2(-19, 17)])
+				bl.width = randf_range(2.0, 3.0)
+				bl.default_color = Color(1.0, 0.4, 0.0, 0.75)
+			if br:
+				br.points = PackedVector2Array([Vector2(22, 17), Vector2(21, randf_range(22.0, 27.0)), Vector2(19, 17)])
+				br.width = randf_range(2.0, 3.0)
+				br.default_color = Color(1.0, 0.4, 0.0, 0.75)
+			if blc:
+				blc.points = PackedVector2Array([Vector2(-21.5, 17), Vector2(-21, randf_range(20.0, 24.0)), Vector2(-20, 17)])
+				blc.default_color = Color(1.0, 0.85, 0.35, 0.85)
+			if brc:
+				brc.points = PackedVector2Array([Vector2(21.5, 17), Vector2(21, randf_range(20.0, 24.0)), Vector2(20, 17)])
+				brc.default_color = Color(1.0, 0.85, 0.35, 0.85)
 
 	# 6. Continuous HUD Sync during active status changes
 	if want_boost or boost < max_boost or is_invulnerable:
