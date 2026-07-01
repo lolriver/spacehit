@@ -95,12 +95,6 @@ func _process(delta: float) -> void:
 			var pause_btn = main_scene.get_node_or_null("%PauseButton")
 			if pause_btn and pause_btn.is_visible_in_tree() and pause_btn.get_global_rect().has_point(mouse_pos):
 				ignore_click = true
-				
-			# Check Sidebar utility panel buttons
-			for btn_name in ["%MissionBtn", "%LeaderboardBtn", "%SettingsBtn"]:
-				var btn = main_scene.get_node_or_null(btn_name)
-				if btn and btn.is_visible_in_tree() and btn.get_global_rect().has_point(mouse_pos):
-					ignore_click = true
 					
 		if not ignore_click:
 			var target_x = clamp(mouse_pos.x, half_width, viewport_width - half_width)

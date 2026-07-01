@@ -82,6 +82,7 @@ func _ready() -> void:
 	
 	# Connect core UI signals
 	%PlayBtn.pressed.connect(start_game)
+	%MenuMissionBtn.pressed.connect(func(): set_state(GameState.STATE_MISSION_PANEL))
 	%MenuLeaderboardBtn.pressed.connect(func(): set_state(GameState.STATE_LEADERBOARD_PANEL))
 	%MenuSettingsBtn.pressed.connect(func(): set_state(GameState.STATE_SETTINGS_PANEL))
 	
@@ -89,11 +90,6 @@ func _ready() -> void:
 	%ResumeButton.pressed.connect(toggle_pause)
 	%BoostButton.button_down.connect(_on_boost_button_down)
 	%BoostButton.button_up.connect(_on_boost_button_up)
-	
-	# Sidebar panel buttons
-	%MissionBtn.pressed.connect(func(): set_state(GameState.STATE_MISSION_PANEL))
-	%LeaderboardBtn.pressed.connect(func(): set_state(GameState.STATE_LEADERBOARD_PANEL))
-	%SettingsBtn.pressed.connect(func(): set_state(GameState.STATE_SETTINGS_PANEL))
 	
 	# Settings sub-screen buttons
 	%SensLessBtn.pressed.connect(func(): adjust_sensitivity(-0.2))
