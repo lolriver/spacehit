@@ -27,7 +27,8 @@ enum GameState {
 	STATE_NAME_ENTRY = 6,
 	STATE_SETTINGS_PANEL = 7,
 	STATE_LEADERBOARD_PANEL = 8,
-	STATE_MISSION_PANEL = 9
+	STATE_MISSION_PANEL = 9,
+	STATE_LEVEL_MAP = 10
 }
 
 var current_state: int = GameState.STATE_MAIN_MENU
@@ -44,6 +45,7 @@ const LASER_STYLE_NAMES = {
 # Persistent Game Settings & High Scores
 var sensitivity: float = 1.6
 var high_scores: Array = []
+var max_unlocked_level: int = 1
 
 # Game Progression stats (Infinite Mode)
 var score: int = 0
@@ -81,7 +83,7 @@ func _ready() -> void:
 	load_high_scores()
 	
 	# Connect core UI signals
-	%PlayBtn.pressed.connect(start_game)
+	%PlayBtn.pressed.connect(func(): set_state(GameState.STATE_LEVEL_MAP))
 	%MenuMissionBtn.pressed.connect(func(): set_state(GameState.STATE_MISSION_PANEL))
 	%MenuLeaderboardBtn.pressed.connect(func(): set_state(GameState.STATE_LEADERBOARD_PANEL))
 	%MenuSettingsBtn.pressed.connect(func(): set_state(GameState.STATE_SETTINGS_PANEL))
@@ -90,6 +92,8 @@ func _ready() -> void:
 	%ResumeButton.pressed.connect(toggle_pause)
 	%BoostButton.button_down.connect(_on_boost_button_down)
 	%BoostButton.button_up.connect(_on_boost_button_up)
+	
+	%MapMenuBackBtn.pressed.connect(func(): set_state(GameState.STATE_MAIN_MENU))
 	
 	# Settings sub-screen buttons
 	%SensLessBtn.pressed.connect(func(): adjust_sensitivity(-0.2))
@@ -106,7 +110,8 @@ func _ready() -> void:
 	# Progression screen transitions
 	%SubmitScoreBtn.pressed.connect(submit_high_score)
 	%NextLevelBtn.pressed.connect(advance_level)
-	%VictoryBackBtn.pressed.connect(func(): set_state(GameState.STATE_MAIN_MENU))
+	%LevelCompleteMapBtn.pressed.connect(func(): set_state(GameState.STATE_LEVEL_MAP))
+	%VictoryBackBtn.pressed.connect(func(): set_state(GameState.STATE_LEVEL_MAP))
 	
 	# Set initial screen visibility
 	set_state(GameState.STATE_MAIN_MENU)
@@ -179,6 +184,7 @@ func set_state(new_state: int) -> void:
 	%LevelCompleteScreen.visible = (new_state == GameState.STATE_LEVEL_COMPLETE)
 	%VictoryScreen.visible = (new_state == GameState.STATE_VICTORY)
 	%GameOverScreen.visible = (new_state == GameState.STATE_GAME_OVER)
+	%LevelMapScreen.visible = (new_state == GameState.STATE_LEVEL_MAP)
 	
 	# State-specific logic initialization
 	if new_state == GameState.STATE_MAIN_MENU:
@@ -190,6 +196,15 @@ func set_state(new_state: int) -> void:
 			player.hide()
 			player.set_process(false)
 		update_menu_high_score()
+	elif new_state == GameState.STATE_LEVEL_MAP:
+		clear_game_entities()
+		is_boss_active = false
+		if boss_panel:
+			boss_panel.hide()
+		if player:
+			player.hide()
+			player.set_process(false)
+		render_level_map()
 	elif new_state == GameState.STATE_PLAYING:
 		if spawn_timer.is_stopped():
 			spawn_timer.start()
@@ -518,6 +533,11 @@ func trigger_level_clear() -> void:
 		player.shield = player.max_shield
 		player.update_hud()
 		
+	# Unlock next stage progression
+	if current_level >= max_unlocked_level:
+		max_unlocked_level = current_level + 1
+		save_settings()
+		
 	set_state(GameState.STATE_LEVEL_COMPLETE)
 
 func advance_level() -> void:
@@ -638,6 +658,8 @@ func load_settings() -> void:
 				%SensValueLabel.text = "%.1f" % sensitivity
 				if SoundManager and json.data.has("laser_style"):
 					SoundManager.laser_style = json.data.get("laser_style")
+				if json.data.has("max_unlocked_level"):
+					max_unlocked_level = int(json.data.get("max_unlocked_level", 1))
 				_update_sound_label()
 				return
 				
@@ -649,7 +671,8 @@ func save_settings() -> void:
 	var file = FileAccess.open("user://settings.json", FileAccess.WRITE)
 	var settings_data = {
 		"sensitivity": sensitivity,
-		"laser_style": SoundManager.laser_style if SoundManager else "sine_chirp"
+		"laser_style": SoundManager.laser_style if SoundManager else "sine_chirp",
+		"max_unlocked_level": max_unlocked_level
 	}
 	var json_string = JSON.stringify(settings_data)
 	file.store_string(json_string)
@@ -779,6 +802,141 @@ func _input(event: InputEvent) -> void:
 	var is_tap = (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or (event is InputEventScreenTouch and event.pressed)
 	if is_tap:
 		if current_state == GameState.STATE_GAME_OVER:
-			set_state(GameState.STATE_MAIN_MENU)
+			set_state(GameState.STATE_LEVEL_MAP)
 		elif current_state == GameState.STATE_VICTORY:
-			set_state(GameState.STATE_MAIN_MENU)
+			set_state(GameState.STATE_LEVEL_MAP)
+
+func render_level_map() -> void:
+	var map_content = %MapContent
+	if not map_content:
+		return
+		
+	# Clear previous map buttons/lines
+	for child in map_content.get_children():
+		child.queue_free()
+		
+	var num_levels = 15
+	var points = PackedVector2Array()
+	
+	# Calculate coordinates for a winding path going upwards
+	var start_y = 1000.0
+	var end_y = 100.0
+	var spacing_y = (start_y - end_y) / (num_levels - 1)
+	
+	for i in range(num_levels):
+		# Winding S-curve: x winds between 160 and 500
+		var x = 330.0 + sin(i * 1.4) * 170.0
+		var y = start_y - i * spacing_y
+		points.append(Vector2(x, y))
+		
+	# Draw the connecting path using Line2D
+	var path_line = Line2D.new()
+	path_line.points = points
+	path_line.width = 4.0
+	path_line.default_color = Color(0.0, 0.94, 1.0, 0.25) # Transparent Cyan glow
+	map_content.add_child(path_line)
+	
+	# Add a second glowing line for neon bloom
+	var path_glow = Line2D.new()
+	path_glow.points = points
+	path_glow.width = 12.0
+	path_glow.default_color = Color(0.0, 0.94, 1.0, 0.08)
+	map_content.add_child(path_glow)
+	
+	# Stylebox flats for buttons
+	var style_unlocked = StyleBoxFlat.new()
+	style_unlocked.bg_color = Color(0.0, 0.2, 0.25, 1.0)
+	style_unlocked.border_width_left = 3
+	style_unlocked.border_width_top = 3
+	style_unlocked.border_width_right = 3
+	style_unlocked.border_width_bottom = 3
+	style_unlocked.border_color = Color(0.0, 0.94, 1.0, 1.0)
+	style_unlocked.shadow_color = Color(0.0, 0.94, 1.0, 0.5)
+	style_unlocked.shadow_size = 6
+	style_unlocked.set_corner_radius_all(25) # Makes it circle (width/height is 50)
+	
+	var style_locked = StyleBoxFlat.new()
+	style_locked.bg_color = Color(0.05, 0.05, 0.08, 1.0)
+	style_locked.border_width_left = 2
+	style_locked.border_width_top = 2
+	style_locked.border_width_right = 2
+	style_locked.border_width_bottom = 2
+	style_locked.border_color = Color(0.2, 0.25, 0.3, 0.5)
+	style_locked.set_corner_radius_all(25)
+	
+	var style_current = StyleBoxFlat.new()
+	style_current.bg_color = Color(0.25, 0.02, 0.08, 1.0) # Pink/Magenta core
+	style_current.border_width_left = 4
+	style_current.border_width_top = 4
+	style_current.border_width_right = 4
+	style_current.border_width_bottom = 4
+	style_current.border_color = Color(1.0, 0.0, 0.47, 1.0) # Glowing Magenta
+	style_current.shadow_color = Color(1.0, 0.0, 0.47, 0.6)
+	style_current.shadow_size = 10
+	style_current.set_corner_radius_all(25)
+	
+	# Instantiate buttons along the path
+	for i in range(num_levels):
+		var level_num = i + 1
+		var btn = Button.new()
+		btn.custom_minimum_size = Vector2(50, 50)
+		btn.size = Vector2(50, 50)
+		btn.position = points[i] - Vector2(25, 25) # Center the button on the point
+		
+		# Check unlock state
+		var is_unlocked = (level_num <= max_unlocked_level)
+		var is_highest = (level_num == max_unlocked_level)
+		
+		if is_unlocked:
+			btn.text = str(level_num)
+			btn.theme_override_colors/font_color = Color.WHITE
+			btn.theme_override_font_sizes/font_size = 18
+			if is_highest:
+				btn.add_theme_stylebox_override("normal", style_current)
+				btn.add_theme_stylebox_override("hover", style_current)
+				btn.add_theme_stylebox_override("pressed", style_current)
+				btn.add_theme_stylebox_override("focus", style_current)
+			else:
+				btn.add_theme_stylebox_override("normal", style_unlocked)
+				btn.add_theme_stylebox_override("hover", style_unlocked)
+				btn.add_theme_stylebox_override("pressed", style_unlocked)
+				btn.add_theme_stylebox_override("focus", style_unlocked)
+				
+			btn.pressed.connect(func(): start_game_at_level(level_num))
+		else:
+			btn.text = "🔒" # Lock unicode
+			btn.theme_override_colors/font_disabled_color = Color(0.3, 0.35, 0.4, 0.5)
+			btn.add_theme_stylebox_override("disabled", style_locked)
+			btn.disabled = true
+			
+		map_content.add_child(btn)
+		
+	# Focus the ScrollContainer near the player's highest level
+	var scroll_container = map_content.get_parent()
+	if scroll_container is ScrollContainer:
+		scroll_container.call_deferred("set_v_scroll", int(points[mini(max_unlocked_level - 1, num_levels - 1)].y - 300))
+
+func start_game_at_level(level_num: int) -> void:
+	current_level = level_num
+	score = 0
+	# Stage goal increases
+	level_goal_kills = 15 + current_level * 5
+	level_current_kills = 0
+	is_boss_active = false
+	if boss_panel:
+		boss_panel.hide()
+	
+	update_score_label()
+	
+	if player:
+		player.reset_player_stats()
+		player.sensitivity = sensitivity
+		
+	# Adjust spawn rate based on level progression
+	spawn_timer.wait_time = max(0.18, 1.2 - (current_level * 0.05))
+	
+	# Update HUD Subtitle
+	if %Sub:
+		%Sub.text = "STAGE " + str(current_level)
+		
+	set_state(GameState.STATE_PLAYING)
