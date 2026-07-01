@@ -89,10 +89,12 @@ func apply_pickup(player: Area2D) -> void:
 			# Increase shield by 1, capped at maximum (5)
 			player.shield = min(player.max_shield, player.shield + 1)
 			player.update_hud()
+			SoundManager.play("pickup_shield")
 		PickupType.HEART:
 			# Increase lives by 1, capped at maximum (3)
 			player.lives = min(3, player.lives + 1)
 			player.update_hud()
+			SoundManager.play("pickup_heart")
 	print("[Pickup] After applying - lives: ", player.lives, ", shield: ", player.shield)
 
 func _spawn_pickup_flash() -> void:

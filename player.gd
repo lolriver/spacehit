@@ -127,6 +127,7 @@ func _process(delta: float) -> void:
 			is_boosting = true
 			shoot_timer.wait_time = 0.1 # Double firing rate
 			shoot_timer.start()
+			SoundManager.play("boost")
 		boost -= delta * 1.5 # Drains in ~2.7 seconds
 		if boost < 0.0:
 			boost = 0.0
@@ -223,10 +224,12 @@ func take_damage() -> void:
 	if shield > 0:
 		shield -= 1
 		print("[Damage] Shield hit! Current shield: ", shield)
+		SoundManager.play("shield_hit")
 		make_invulnerable(1.0) # Brief invulnerability
 	else:
 		lives -= 1
 		print("[Damage] Life lost! Current lives: ", lives)
+		SoundManager.play("explosion", -4.0)
 		make_invulnerable(1.8) # Longer invulnerability for life loss
 	
 	update_hud()
@@ -250,7 +253,10 @@ func _on_shoot_timer_timeout() -> void:
 	shoot_laser()
 
 func shoot_laser() -> void:
+	if not is_visible_in_tree():
+		return
 	if laser_scene:
 		var laser = laser_scene.instantiate()
 		laser.global_position = laser_spawn.global_position
 		get_parent().add_child(laser)
+		SoundManager.play("laser", -8.0) # Quieter since it fires rapidly

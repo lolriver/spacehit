@@ -438,6 +438,7 @@ var boss_entrance_tween: Tween = null
 
 func show_boss_health_bar(max_hp: int, p_boss_name: String = "UNKNOWN") -> void:
 	if boss_panel and boss_progress_bar:
+		SoundManager.play("boss_entrance")
 		boss_max_health = max_hp
 		boss_health = max_hp
 		boss_name = p_boss_name
@@ -504,6 +505,7 @@ func on_boss_defeated() -> void:
 	trigger_level_clear()
 
 func trigger_level_clear() -> void:
+	SoundManager.play("level_clear")
 	# Fully restore player shields as a Stage Clear reward!
 	if player:
 		player.shield = player.max_shield
@@ -530,6 +532,8 @@ func advance_level() -> void:
 func trigger_game_over() -> void:
 	if current_state == GameState.STATE_GAME_OVER or current_state == GameState.STATE_NAME_ENTRY:
 		return
+		
+	SoundManager.play("game_over")
 		
 	if player:
 		player.hide()

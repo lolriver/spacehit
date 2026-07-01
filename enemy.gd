@@ -500,8 +500,12 @@ func _on_area_entered(area: Area2D) -> void:
 			if explosion_scene:
 				var explosion = explosion_scene.instantiate()
 				explosion.global_position = global_position
+				SoundManager.play("enemy_destroy")
+				
+				# If Boss, add huge explosion sound
 				if enemy_type == 5:
-					explosion.scale = Vector2(2.8, 2.8)
+					SoundManager.play("explosion")
+					explosion.scale = Vector2(3.0, 3.0)
 					# Spawn secondary explosions for visual feedback
 					for offset in [Vector2(-30, -30), Vector2(30, 30), Vector2(-30, 30), Vector2(30, -30)]:
 						var ex = explosion_scene.instantiate()
