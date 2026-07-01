@@ -914,7 +914,7 @@ func render_level_map() -> void:
 	# Focus the ScrollContainer near the player's highest level
 	var scroll_container = map_content.get_parent()
 	if scroll_container is ScrollContainer:
-		scroll_container.call_deferred("set_v_scroll", int(points[mini(max_unlocked_level - 1, num_levels - 1)].y - 300))
+		scroll_container.set_deferred("scroll_vertical", int(points[clampi(max_unlocked_level - 1, 0, num_levels - 1)].y - 300))
 
 func start_game_at_level(level_num: int) -> void:
 	current_level = level_num
