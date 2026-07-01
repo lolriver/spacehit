@@ -32,6 +32,15 @@ enum GameState {
 
 var current_state: int = GameState.STATE_MAIN_MENU
 
+# List of available laser sound styles
+const LASER_STYLES = ["sine_chirp", "classic_pew", "plasma_pulse", "double_shot"]
+const LASER_STYLE_NAMES = {
+	"sine_chirp": "SINE CHIRP (DEFAULT)",
+	"classic_pew": "CLASSIC PEW (8-BIT)",
+	"plasma_pulse": "PLASMA PULSE",
+	"double_shot": "DOUBLE BLIP"
+}
+
 # Persistent Game Settings & High Scores
 var sensitivity: float = 1.6
 var high_scores: Array = []
@@ -89,6 +98,8 @@ func _ready() -> void:
 	# Settings sub-screen buttons
 	%SensLessBtn.pressed.connect(func(): adjust_sensitivity(-0.2))
 	%SensMoreBtn.pressed.connect(func(): adjust_sensitivity(0.2))
+	%PrevSoundBtn.pressed.connect(func(): cycle_laser_style(-1))
+	%NextSoundBtn.pressed.connect(func(): cycle_laser_style(1))
 	%ResetScoresBtn.pressed.connect(reset_high_scores)
 	%SettingsBackBtn.pressed.connect(func(): set_state(GameState.STATE_MAIN_MENU))
 	
@@ -629,17 +640,42 @@ func load_settings() -> void:
 			if json.data is Dictionary:
 				sensitivity = json.data.get("sensitivity", 1.6)
 				%SensValueLabel.text = "%.1f" % sensitivity
+				if SoundManager and json.data.has("laser_style"):
+					SoundManager.laser_style = json.data.get("laser_style")
+				_update_sound_label()
 				return
 				
 	sensitivity = 1.6
 	%SensValueLabel.text = "%.1f" % sensitivity
+	_update_sound_label()
 
 func save_settings() -> void:
 	var file = FileAccess.open("user://settings.json", FileAccess.WRITE)
-	var settings_data = {"sensitivity": sensitivity}
+	var settings_data = {
+		"sensitivity": sensitivity,
+		"laser_style": SoundManager.laser_style if SoundManager else "sine_chirp"
+	}
 	var json_string = JSON.stringify(settings_data)
 	file.store_string(json_string)
 	file.close()
+
+func cycle_laser_style(direction: int) -> void:
+	if not SoundManager:
+		return
+	var current_idx = LASER_STYLES.find(SoundManager.laser_style)
+	if current_idx == -1:
+		current_idx = 0
+	var next_idx = (current_idx + direction + LASER_STYLES.size()) % LASER_STYLES.size()
+	SoundManager.laser_style = LASER_STYLES[next_idx]
+	_update_sound_label()
+	# Play a sample of the new sound immediately
+	SoundManager.play("laser")
+	save_settings()
+
+func _update_sound_label() -> void:
+	if not SoundManager or not %SoundValueLabel:
+		return
+	%SoundValueLabel.text = LASER_STYLE_NAMES.get(SoundManager.laser_style, "SINE CHIRP (DEFAULT)")
 
 func reset_high_scores() -> void:
 	high_scores = [

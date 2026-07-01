@@ -13,6 +13,9 @@ var sounds: Dictionary = {}
 # Master volume control (0.0 to 1.0)
 var master_volume: float = 0.8
 
+# Selected laser style
+var laser_style: String = "sine_chirp"
+
 const SAMPLE_RATE: int = 22050
 
 func _ready() -> void:
@@ -51,7 +54,10 @@ func _setup_player() -> void:
 	sfx_player.play()
 
 func _generate_all_sounds() -> void:
-	sounds["laser"] = _gen_laser()
+	sounds["laser_sine_chirp"] = _gen_laser_sine_chirp()
+	sounds["laser_classic_pew"] = _gen_laser_classic_pew()
+	sounds["laser_plasma_pulse"] = _gen_laser_plasma_pulse()
+	sounds["laser_double_shot"] = _gen_laser_double_shot()
 	sounds["explosion"] = _gen_explosion()
 	sounds["shield_hit"] = _gen_shield_hit()
 	sounds["pickup_shield"] = _gen_pickup_shield()
@@ -63,6 +69,8 @@ func _generate_all_sounds() -> void:
 	sounds["level_clear"] = _gen_level_clear()
 
 func play(sound_name: String, volume_db: float = 0.0) -> void:
+	if sound_name == "laser":
+		sound_name = "laser_" + laser_style
 	if not sfx_playback and sfx_player:
 		sfx_playback = sfx_player.get_stream_playback()
 	if sounds.has(sound_name) and sfx_playback:
@@ -114,7 +122,7 @@ func _samples_to_stream(samples: PackedFloat32Array) -> AudioStreamWAV:
 #  SOUND GENERATORS
 # ═══════════════════════════════════════════════
 
-func _gen_laser() -> AudioStreamWAV:
+func _gen_laser_sine_chirp() -> AudioStreamWAV:
 	## Premium sci-fi sine chirp with a soft transient click.
 	## Much cleaner and less harsh than a square wave, pleasant even at high firing rates.
 	var duration = 0.07 # 70ms
@@ -138,6 +146,70 @@ func _gen_laser() -> AudioStreamWAV:
 		samples[i] = tone + transient
 		phase += freq / SAMPLE_RATE
 	
+	return _samples_to_stream(samples)
+
+func _gen_laser_classic_pew() -> AudioStreamWAV:
+	## The classic buzzing 8-bit square-wave sweep
+	var duration = 0.12 # 120ms
+	var num_samples = int(SAMPLE_RATE * duration)
+	var samples = PackedFloat32Array()
+	samples.resize(num_samples)
+	var phase = 0.0
+	
+	for i in range(num_samples):
+		var t = float(i) / float(num_samples)
+		var freq = lerpf(1500.0, 300.0, t * t) # Exponential sweep down
+		var envelope = (1.0 - t) * (1.0 - t) # Quadratic decay
+		var val = _square(phase, 0.35) * envelope * 0.38
+		samples[i] = val
+		phase += freq / SAMPLE_RATE
+	
+	return _samples_to_stream(samples)
+
+func _gen_laser_plasma_pulse() -> AudioStreamWAV:
+	## A soft, punchy plasma pulse using a triangle wave
+	var duration = 0.10 # 100ms
+	var num_samples = int(SAMPLE_RATE * duration)
+	var samples = PackedFloat32Array()
+	samples.resize(num_samples)
+	var phase = 0.0
+	
+	for i in range(num_samples):
+		var t = float(i) / float(num_samples)
+		var freq = lerpf(700.0, 200.0, t) # Lower frequency sweep
+		var envelope = pow(1.0 - t, 2.0)
+		var val = _triangle(phase) * envelope * 0.35
+		samples[i] = val
+		phase += freq / SAMPLE_RATE
+	
+	return _samples_to_stream(samples)
+
+func _gen_laser_double_shot() -> AudioStreamWAV:
+	## Two rapid sine-wave blips in quick succession
+	var duration = 0.10 # 100ms
+	var num_samples = int(SAMPLE_RATE * duration)
+	var samples = PackedFloat32Array()
+	samples.resize(num_samples)
+	var phase = 0.0
+	var phase2 = 0.0
+	var mid_sample = int(num_samples / 2)
+	
+	for i in range(num_samples):
+		if i < mid_sample:
+			# First blip (0 to 50ms)
+			var t = float(i) / float(mid_sample)
+			var freq = lerpf(1400.0, 800.0, t)
+			var envelope = pow(1.0 - t, 2.0)
+			samples[i] = _sine(phase) * envelope * 0.25
+			phase += freq / SAMPLE_RATE
+		else:
+			# Second blip (50ms to 100ms)
+			var t = float(i - mid_sample) / float(num_samples - mid_sample)
+			var freq = lerpf(1400.0, 800.0, t)
+			var envelope = pow(1.0 - t, 2.0)
+			samples[i] = _sine(phase2) * envelope * 0.25
+			phase2 += freq / SAMPLE_RATE
+			
 	return _samples_to_stream(samples)
 
 func _gen_explosion() -> AudioStreamWAV:

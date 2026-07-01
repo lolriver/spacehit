@@ -738,6 +738,44 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_CyanNeon")
 text = "+"
 
+[node name="LaserSoundBox" type="VBoxContainer" parent="UI/SettingsPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="UI/SettingsPanel/VBox/LaserSoundBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "LASER AUDIO STYLE"
+horizontal_alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="UI/SettingsPanel/VBox/LaserSoundBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="PrevSoundBtn" type="Button" parent="UI/SettingsPanel/VBox/LaserSoundBox/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_CyanNeon")
+text = "<"
+
+[node name="SoundValueLabel" type="Label" parent="UI/SettingsPanel/VBox/LaserSoundBox/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "SINE CHIRP"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NextSoundBtn" type="Button" parent="UI/SettingsPanel/VBox/LaserSoundBox/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_CyanNeon")
+text = ">"
+
 [node name="ResetScoresBtn" type="Button" parent="UI/SettingsPanel/VBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
