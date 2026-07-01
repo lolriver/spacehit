@@ -55,9 +55,9 @@ func _setup_player() -> void:
 
 func _generate_all_sounds() -> void:
 	sounds["laser_sine_chirp"] = _gen_laser_sine_chirp()
-	sounds["laser_classic_pew"] = _gen_laser_classic_pew()
-	sounds["laser_plasma_pulse"] = _gen_laser_plasma_pulse()
-	sounds["laser_double_shot"] = _gen_laser_double_shot()
+	sounds["laser_galaga_retro"] = _gen_laser_galaga_retro()
+	sounds["laser_mario_jump"] = _gen_laser_mario_jump()
+	sounds["laser_pac_waka"] = _gen_laser_pac_waka()
 	sounds["explosion"] = _gen_explosion()
 	sounds["shield_hit"] = _gen_shield_hit()
 	sounds["pickup_shield"] = _gen_pickup_shield()
@@ -148,9 +148,9 @@ func _gen_laser_sine_chirp() -> AudioStreamWAV:
 	
 	return _samples_to_stream(samples)
 
-func _gen_laser_classic_pew() -> AudioStreamWAV:
-	## The classic buzzing 8-bit square-wave sweep
-	var duration = 0.12 # 120ms
+func _gen_laser_galaga_retro() -> AudioStreamWAV:
+	## Classic Namco/Galaga style 25% pulse wave rapid sweep
+	var duration = 0.09 # 90ms
 	var num_samples = int(SAMPLE_RATE * duration)
 	var samples = PackedFloat32Array()
 	samples.resize(num_samples)
@@ -158,58 +158,49 @@ func _gen_laser_classic_pew() -> AudioStreamWAV:
 	
 	for i in range(num_samples):
 		var t = float(i) / float(num_samples)
-		var freq = lerpf(1500.0, 300.0, t * t) # Exponential sweep down
-		var envelope = (1.0 - t) * (1.0 - t) # Quadratic decay
-		var val = _square(phase, 0.35) * envelope * 0.38
-		samples[i] = val
-		phase += freq / SAMPLE_RATE
-	
-	return _samples_to_stream(samples)
-
-func _gen_laser_plasma_pulse() -> AudioStreamWAV:
-	## A soft, punchy plasma pulse using a triangle wave
-	var duration = 0.10 # 100ms
-	var num_samples = int(SAMPLE_RATE * duration)
-	var samples = PackedFloat32Array()
-	samples.resize(num_samples)
-	var phase = 0.0
-	
-	for i in range(num_samples):
-		var t = float(i) / float(num_samples)
-		var freq = lerpf(700.0, 200.0, t) # Lower frequency sweep
+		var freq = lerpf(1800.0, 250.0, t * t) # Rapid quadratic sweep down
 		var envelope = pow(1.0 - t, 2.0)
-		var val = _triangle(phase) * envelope * 0.35
+		var val = _square(phase, 0.25) * envelope * 0.35
 		samples[i] = val
 		phase += freq / SAMPLE_RATE
 	
 	return _samples_to_stream(samples)
 
-func _gen_laser_double_shot() -> AudioStreamWAV:
-	## Two rapid sine-wave blips in quick succession
-	var duration = 0.10 # 100ms
+func _gen_laser_mario_jump() -> AudioStreamWAV:
+	## Triumphant rising sweep — clean triangle wave
+	var duration = 0.14 # 140ms
 	var num_samples = int(SAMPLE_RATE * duration)
 	var samples = PackedFloat32Array()
 	samples.resize(num_samples)
 	var phase = 0.0
-	var phase2 = 0.0
-	var mid_sample = int(num_samples / 2)
 	
 	for i in range(num_samples):
-		if i < mid_sample:
-			# First blip (0 to 50ms)
-			var t = float(i) / float(mid_sample)
-			var freq = lerpf(1400.0, 800.0, t)
-			var envelope = pow(1.0 - t, 2.0)
-			samples[i] = _sine(phase) * envelope * 0.25
-			phase += freq / SAMPLE_RATE
-		else:
-			# Second blip (50ms to 100ms)
-			var t = float(i - mid_sample) / float(num_samples - mid_sample)
-			var freq = lerpf(1400.0, 800.0, t)
-			var envelope = pow(1.0 - t, 2.0)
-			samples[i] = _sine(phase2) * envelope * 0.25
-			phase2 += freq / SAMPLE_RATE
-			
+		var t = float(i) / float(num_samples)
+		var freq = lerpf(150.0, 950.0, t) # Linear sweep up
+		var envelope = 1.0 - t * 0.5 # Gentle decay
+		var val = _triangle(phase) * envelope * 0.45
+		samples[i] = val
+		phase += freq / SAMPLE_RATE
+	
+	return _samples_to_stream(samples)
+
+func _gen_laser_pac_waka() -> AudioStreamWAV:
+	## Soft, fast triangle wave blip
+	var duration = 0.06 # 60ms
+	var num_samples = int(SAMPLE_RATE * duration)
+	var samples = PackedFloat32Array()
+	samples.resize(num_samples)
+	var phase = 0.0
+	
+	for i in range(num_samples):
+		var t = float(i) / float(num_samples)
+		# Frequency goes up then down
+		var freq = 400.0 + sin(t * PI) * 600.0
+		var envelope = sin(t * PI) # Fade in and out smoothly
+		var val = _triangle(phase) * envelope * 0.4
+		samples[i] = val
+		phase += freq / SAMPLE_RATE
+	
 	return _samples_to_stream(samples)
 
 func _gen_explosion() -> AudioStreamWAV:

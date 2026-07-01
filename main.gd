@@ -33,12 +33,12 @@ enum GameState {
 var current_state: int = GameState.STATE_MAIN_MENU
 
 # List of available laser sound styles
-const LASER_STYLES = ["sine_chirp", "classic_pew", "plasma_pulse", "double_shot"]
+const LASER_STYLES = ["sine_chirp", "galaga_retro", "mario_jump", "pac_waka"]
 const LASER_STYLE_NAMES = {
-	"sine_chirp": "SINE CHIRP (DEFAULT)",
-	"classic_pew": "CLASSIC PEW (8-BIT)",
-	"plasma_pulse": "PLASMA PULSE",
-	"double_shot": "DOUBLE BLIP"
+	"sine_chirp": "SINE CHIRP (CLEAN)",
+	"galaga_retro": "GALAGA RETRO (8-BIT)",
+	"mario_jump": "MARIO JUMP (SLIDE)",
+	"pac_waka": "PAC-WAKA CHIRP"
 }
 
 # Persistent Game Settings & High Scores
